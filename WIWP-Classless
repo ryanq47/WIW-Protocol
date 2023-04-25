@@ -1,0 +1,207 @@
+## this could all be a class eventually, but for now, it's on its own
+
+import socket
+import math
+import time
+
+
+## ToDO;
+
+## Error handling
+## Proper Logging
+
+
+##===============================Recv Protocol==================================================
+"""
+        
+
+    Protocol order/steps/Definitions:
+
+    HEADER_BYTES: The size of the header. Currently 10 bytes, this allows for a theoretical 1.17 yottabytes to be transfered before the protocol limits out. 
+                (That number is quite ridiculous, so the other header space may get used for other items in the future)
+
+    Header: The header contains the size of the message to be sent. I.E: If your message was 1024 Bytes, the header will contain '1024'
+
+    Chunk: A partial piece of the entire message. Each chunk is equal to the size of the buffer. 
+
+    1) Listen for header.
+
+    2) Calculate chunk size based on header
+
+    3) Recieve the remaining chunks based on the header size
+
+    4) (optional/based on code flow): Return data to calling function, and/or loop
+
+        
+"""
+
+def recieve_msg(conn):
+    complete_msg = ""
+    ## clients need to have a shared known header beforehand. Default is 10
+    HEADER_BYTES = 10
+    BUFFER = 1024
+    header_value = 0
+    header_contents = ""
+    
+    msg_bytes_recieved_so_far = 0
+    
+    print(f"WAITING ON HEADER TO BE SENT:")
+    header_msg_length = conn.recv(HEADER_BYTES).decode() #int(bytes_decode(msg)
+    print("HEADER:" + header_msg_length)
+    
+    ## getting the amount of chunks/iterations eneded at 1024 bytes a message
+    chunks = math.ceil(int(header_msg_length)/BUFFER)
+    #print(chunks)
+    
+    #print(bytes_decode(msg))
+    
+    complete_msg = "" #bytes_decode(msg)[10:]
+    
+    #while True:
+    for i in range(0, chunks):
+        print(f"RECEVING CHUNK:")
+        msg = conn.recv(BUFFER)  # << adjustble, how many bytes you want to get per iteration
+        
+        ## getting the amount of bytes sent so far
+        msg_bytes_recieved_so_far = msg_bytes_recieved_so_far + len(bytes_decode(msg))
+
+        complete_msg += bytes_decode(msg)
+        
+        print(bytes_decode(msg))
+        
+        print(f"""DEBUG:
+            Full Message Length (based on header value) {header_msg_length}
+            Header size: {HEADER_BYTES}
+
+            Size of message recieved so far: {msg_bytes_recieved_so_far}  
+            
+            Chunks: {chunks}          
+            
+              """)
+        
+        ## if complete_msg is the same length as what the headers says, consider it complete. 
+        if len(complete_msg) == header_msg_length:
+            print("MSG TRANSFER COMPLETE")
+    
+    print("VALUE OF MSG: \n" + complete_msg)
+    return complete_msg
+
+
+##===============================Send Protocol==================================================
+"""
+        
+    Protocol order/steps/Definitions:
+
+    HEADER_BYTES: The size of the header. Currently 10 bytes, this allows for a theoretical 1.17 yottabytes to be transfered before the protocol limits out. 
+                (That number is quite ridiculous, so the other header space may get used for other items in the future)
+
+    Header: The header contains the size of the message to be sent. I.E: If your message was 1024 Bytes, the header will contain '1024'
+
+    Chunk: A partial piece of the entire message. Each chunk is equal to the size of the buffer. 
+
+    1) Connect to listening server
+
+    2) Send the header
+
+    3) Calculate chunk size based on header
+
+    4) Send the chunks based on the header size
+
+
+"""               
+
+#### GOLDEN DO NOT TOUCH #####
+def send_msg(msg, conn):
+    #msg = str_encode(_msg)
+    
+    #conn = server
+    ## clients need to have a shared known header beforehand. Default is 10
+    HEADER_BYTES = 10
+    BUFFER = 1024
+    
+    ## get the length of the message in bytes
+    msg_length = len(msg)
+    
+    ## create a header for the message that includes the length of the message
+    header = str_encode(str(msg_length).zfill(HEADER_BYTES))#.encode()
+    
+    ## send the header followed by the message in chunks
+    print(f"SENDING HEADER: {header}")
+    conn.send(header)
+    
+    for i in range(0, math.ceil(msg_length/BUFFER)):
+        
+        ## gets the right spot in the message in a loop
+        chunk = msg[i*BUFFER:(i+1)*BUFFER]
+        print(f"SENDING CHUNK: {chunk}")
+        conn.send(str_encode(chunk))
+        
+    
+
+##===============================En/Decode==================================================
+
+"""
+These exist purely as a CYA, and an easy interface to make custom En/Decode functions. 
+For example, you can do a try except loop of different encodings incase you recieve some weird encodings. 
+
+    
+"""
+
+    ## bytes-> str
+def bytes_decode(input) -> str:
+    decoded_result = input.decode()
+    return decoded_result
+
+    ## str -> bytes
+def str_encode(input) -> bytes:
+    encoded_result = input.encode()
+    return encoded_result
+
+
+
+
+## Uncomment Server if you want this to be a server, and vice versa for client
+
+
+'''
+## Server Code
+
+if __name__ == "__main__":
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # this allows the socket to be reelased immediatly on crash/exit
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    ip = "127.0.0.1"
+    port = 80
+
+    s = server.bind((ip, port))
+    print("LISTENING")
+    server.listen()
+    print("ACCEPTING")
+    conn, addr = server.accept()
+
+    while True:
+        recieve_msg(conn)
+        send_msg("404 Server not... Just kidding it works", conn)
+
+
+'''
+
+
+'''
+##client code
+
+if __name__ == "__main__":
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # this allows the socket to be reelased immediatly on crash/exit
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    ip = "127.0.0.1"
+    port = 80
+
+    server.connect((ip, port))
+    while True:
+        send_msg(input("Enter command"), server)
+        print(recieve_msg(server))
+
+        '''
