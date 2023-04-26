@@ -6,6 +6,9 @@ There are 2 version, one that is class based, and one that is not. The class ver
 Notes: These are POC's at the moment, I haven't implemented full error handling or thoroughly tested every scenario. Use at your own risk. 
 
 
-## Usage:
+## //todo:
+ Proper Error handling
+ Latency measurement
+ 
 
 
