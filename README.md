@@ -7,7 +7,7 @@ Notes: These are POC's at the moment, I haven't implemented full error handling 
 
 
 ## //todo:
- Proper Error handling
+ Proper Error handling <br>
  Latency measurement
  
 
